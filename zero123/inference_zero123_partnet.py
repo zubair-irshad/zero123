@@ -300,14 +300,15 @@ def inference(
     #azimuth = 30, 90, 150, 210, 270, 330
     #elevation = 30, -20, 30, -20, 30, -20
 
-    azimuth_angles = ['-45', '-25', '-10', '10', '25', '45']
-    elevation_angles = ['-90', '-45', '-10', '10', '45', '90']
+    # azimuth_angles = ['-45', '-25', '-10', '10', '25', '45']
+    # elevation_angles = ['-90', '-45', '-10', '10', '45', '90']
 
-    # azimuth_angles     =  ['0',  '0',  '0',  '0',  '0',  '0']
-    # elevation_angles   =  ['0',  '0',  '0',  '0',  '0',  '0']
+    azimuth_angles     =  ['0',  '0',  '0',  '0',  '0',  '0']
+    elevation_angles   =  ['0',  '0',  '0',  '0',  '0',  '0']
 
-    articulation_angles = ['-30', '-20', '-10', '10', '20', '30']
+    # articulation_angles = ['-30', '-20', '-10', '10', '20', '30']
 
+    articulation_angles = ['-10', '-20', '-30', '-40', '-60', '-80']
     raw_im = input_image
 
     for i in range(len(azimuth_angles)):
@@ -335,11 +336,11 @@ def inference(
 
 if __name__ == '__main__':
 
-    input_image_path = '/data/zubair/partnet_mobility_z123/10040/40/40/008.png'
+    input_image_path = '/data/zubair/partnet_mobility_z123/11242/90/90/004.png'
     # input_image_path = '/home/ubuntu/zubair/zero123/3drec/data/nerf_wild/lysol/train/r_0.png'
     input_image = Image.open(input_image_path)
 
-    output_dir = '/home/ubuntu/zubair/zero123/articulation_output/10040_40'
+    output_dir = '/home/ubuntu/zubair/zero123/articulation_output/11242_90'
     os.makedirs(output_dir, exist_ok=True)
 
     #save input image in output_dir
