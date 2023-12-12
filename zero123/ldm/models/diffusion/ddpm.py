@@ -523,11 +523,18 @@ class LatentDiffusion(DDPM):
         self.cond_stage_forward = cond_stage_forward
 
         # construct linear projection layer for concatenating image CLIP embedding and RT
-        # self.cc_projection = nn.Linear(772, 768)
-        self.cc_projection = nn.Linear(773, 768)
+        self.cc_projection = nn.Linear(772, 768)
+        # self.cc_projection = nn.Linear(773, 768)
         nn.init.eye_(list(self.cc_projection.parameters())[0][:768, :768])
         nn.init.zeros_(list(self.cc_projection.parameters())[1])
         self.cc_projection.requires_grad_(True)
+
+        # Define the linear layer for the new conditioning channel
+        self.angle_deviation_projection = nn.Linear(767, 768)
+        nn.init.eye_(list(self.angle_deviation_projection.parameters())[:768, :768])
+        nn.init.zeros_(list(self.angle_deviation_projection.parameters())[1])
+        self.angle_deviation_projection.requires_grad_(True)
+
         
         self.clip_denoised = False
         self.bbox_tokenizer = None
@@ -750,7 +757,10 @@ class LatentDiffusion(DDPM):
         with torch.enable_grad():
             clip_emb = self.get_learned_conditioning(xc).detach()
             null_prompt = self.get_learned_conditioning([""]).detach()
-            cond["c_crossattn"] = [self.cc_projection(torch.cat([torch.where(prompt_mask, null_prompt, clip_emb), T[:, None, :]], dim=-1))]
+            pose_c_projection = self.cc_projection(torch.cat([torch.where(prompt_mask, null_prompt, clip_emb), T[:-1, None, :-1]], dim=-1))
+            final_projection = self.angle_deviation_projection(torch.cat([T[-1:, None, -1:], pose_c_projection], dim=-1))
+            # cond["c_crossattn"] = [self.cc_projection(torch.cat([torch.where(prompt_mask, null_prompt, clip_emb), T[:, None, :]], dim=-1))]
+            cond["c_crossattn"] = [final_projection]
         cond["c_concat"] = [input_mask * self.encode_first_stage((xc.to(self.device))).mode().detach()]
         out = [z, cond]
         if return_first_stage_outputs:
