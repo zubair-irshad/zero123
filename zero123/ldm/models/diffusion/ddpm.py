@@ -1425,6 +1425,10 @@ class LatentDiffusion(DDPM):
             params = params + list(self.cc_projection.parameters())
             print('========== optimizing for cc projection weight ==========')
 
+        if self.angle_deviation_projection is not None:
+            params = params + list(self.angle_deviation_projection.parameters())
+            print('========== optimizing for angle_deviation_projection weight ==========')
+
         opt = torch.optim.AdamW([{"params": self.model.parameters(), "lr": lr},
                                 {"params": self.cc_projection.parameters(), "lr": 10. * lr}], lr=lr)
         if self.use_scheduler:
