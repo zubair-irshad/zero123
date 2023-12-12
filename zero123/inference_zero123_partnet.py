@@ -301,17 +301,17 @@ def inference(
     # azimuth_angles = ['-45', '-25', '-10', '10', '25', '45']
     # elevation_angles = ['-90', '-45', '-10', '10', '45', '90']
 
-    azimuth_angles     =  [0,  0,  0,  0,  0,  0]
-    elevation_angles   =  [0,  0,  0,  0,  0,  0]
+    azimuth_angles     =  ['0',  '0',  '0',  '0',  '0',  '0']
+    elevation_angles   =  ['0',  '0',  '0',  '0',  '0',  '0']
 
-    articulation_angles = [-30, -20, -10, 10, 20, 30]
+    articulation_angles = ['-30', '-20', '-10', '10', '20', '30']
 
     raw_im = input_image
 
     for i in range(len(azimuth_angles)):
 
         x, y, z, description, show_in_im2, output_ims = main_run_inference(models, device, 'angles_gen', float(azimuth_angles[i]), float(elevation_angles[i]), 0.0, 
-                                                                           np.deg2rad(articulation_angles[i]), raw_im=raw_im)
+                                                                           np.deg2rad(float(articulation_angles[i])), raw_im=raw_im)
 
         azimuth= float(azimuth_angles[i])
         elevation= float(elevation_angles[i])
