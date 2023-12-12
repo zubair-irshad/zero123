@@ -311,7 +311,7 @@ def inference(
     for i in range(len(azimuth_angles)):
 
         x, y, z, description, show_in_im2, output_ims = main_run_inference(models, device, 'angles_gen', float(azimuth_angles[i]), float(elevation_angles[i]), 0.0, 
-                                                                           np.deg2rad(float(articulation_angles[i])), raw_im=raw_im)
+                                                                           float(np.deg2rad(float(articulation_angles[i]))), raw_im=raw_im)
 
         azimuth= float(azimuth_angles[i])
         elevation= float(elevation_angles[i])
