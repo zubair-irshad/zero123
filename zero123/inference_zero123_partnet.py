@@ -300,11 +300,11 @@ def inference(
     #azimuth = 30, 90, 150, 210, 270, 330
     #elevation = 30, -20, 30, -20, 30, -20
 
-    # azimuth_angles = ['-45', '-25', '-10', '10', '25', '45']
-    # elevation_angles = ['-90', '-45', '-10', '10', '45', '90']
+    azimuth_angles = ['-45', '-25', '-10', '10', '25', '45']
+    elevation_angles = ['-90', '-45', '-10', '10', '45', '90']
 
-    azimuth_angles     =  ['0',  '0',  '0',  '0',  '0',  '0']
-    elevation_angles   =  ['0',  '0',  '0',  '0',  '0',  '0']
+    # azimuth_angles     =  ['0',  '0',  '0',  '0',  '0',  '0']
+    # elevation_angles   =  ['0',  '0',  '0',  '0',  '0',  '0']
 
     articulation_angles = ['-30', '-20', '-10', '10', '20', '30']
 
