@@ -143,7 +143,7 @@ def main_run_inference(models, device, return_what,
              x=0.0, y=0.0, z=0.0,
              art_angle = 0.0,
              raw_im=None, preprocess=True,
-             scale=1.0, n_samples=4, ddim_steps=50, ddim_eta=1.0,
+             scale=3.0, n_samples=4, ddim_steps=50, ddim_eta=1.0,
              precision='fp32', h=512, w=512):
     '''
     :param raw_im (PIL Image).
