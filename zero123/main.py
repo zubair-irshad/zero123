@@ -21,15 +21,13 @@ from pytorch_lightning.utilities import rank_zero_info
 from ldm.data.base import Txt2ImgIterableBaseDataset
 from ldm.util import instantiate_from_config
 import wandb
+wandb.init(project="zero123", sync_tensorboard=True)
 
 MULTINODE_HACKS = False
 
 @rank_zero_only
 def rank_zero_print(*args):
     print(*args)
-
-@rank_zero_only
-wandb.init(project="zero123", sync_tensorboard=True)
 
 def modify_weights(w, scale = 1e-6, n=2):
     """Modify weights to accomodate concatenation to unet"""
