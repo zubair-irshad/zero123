@@ -284,7 +284,7 @@ class ObjaverseData(Dataset):
         self.tform = image_transforms
 
     def __len__(self):
-        return len(self.paths)
+        return 100*len(self.paths)
         
     def cartesian_to_spherical(self, xyz):
         ptsnew = np.hstack((xyz, np.zeros(xyz.shape)))
