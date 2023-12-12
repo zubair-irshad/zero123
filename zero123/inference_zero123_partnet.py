@@ -316,7 +316,7 @@ def inference(
         azimuth= float(azimuth_angles[i])
         elevation= float(elevation_angles[i])
         # angle_str = f'azimuth={azimuth:.1f}, elevation={elevation:.1f}'
-        angle_art = f'art_angle={articulation_angles[i]:.1f}'
+        angle_art = f'art_angle={float(articulation_angles[i]):.1f}'
         output_ims[0].save(output_dir + '/output_' + angle_art + '.png')
 
     # x, y, z, description, show_in_im2, output_ims = main_run_inference(models, device, 'angles_gen', 0.0, -90.0, 0.0, raw_im=raw_im)
