@@ -67,7 +67,8 @@ def sample_model(input_im, model, sampler, precision, h, w, ddim_steps, n_sample
             T = T[None, None, :].repeat(n_samples, 1, 1).to(c.device)
             c = torch.cat([c, T], dim=-1)
             c = model.cc_projection(c)
-
+            print("art_angle", art_angle)
+            print("art angle degree", np.rad2deg(art_angle))
             angle_T = torch.tensor([art_angle]).to(c.device)
             angle_T = angle_T[None, None, :].repeat(n_samples, 1, 1).to(c.device)
 
@@ -81,7 +82,8 @@ def sample_model(input_im, model, sampler, precision, h, w, ddim_steps, n_sample
             if scale != 1.0:
                 uc = {}
                 uc['c_concat'] = [torch.zeros(n_samples, 4, h // 8, w // 8).to(c.device)]
-                uc['c_crossattn'] = [torch.zeros_like(c).to(c.device)]
+                # uc['c_crossattn'] = [torch.zeros_like(c).to(c.device)]
+                uc['c_crossattn'] = [torch.zeros_like(final_projection).to(c.device)]
             else:
                 uc = None
 
@@ -141,8 +143,8 @@ def main_run_inference(models, device, return_what,
              x=0.0, y=0.0, z=0.0,
              art_angle = 0.0,
              raw_im=None, preprocess=True,
-             scale=3.0, n_samples=4, ddim_steps=50, ddim_eta=1.0,
-             precision='fp32', h=256, w=256):
+             scale=1.0, n_samples=4, ddim_steps=50, ddim_eta=1.0,
+             precision='fp32', h=512, w=512):
     '''
     :param raw_im (PIL Image).
     '''
