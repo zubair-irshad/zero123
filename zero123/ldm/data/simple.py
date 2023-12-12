@@ -463,9 +463,11 @@ class PartnetData(Dataset):
         data = {}
         total_view = self.total_view
         index_target, index_cond = random.sample(range(total_view), 2) # without replacement
-
-
-        filename = os.path.join(self.root_dir, self.paths[index])
+    
+        all_folders_len = len(self.paths)
+        folder_index = random.randint(0, all_folders_len-1)
+        filename = os.path.join(self.root_dir, self.paths[folder_index])
+        # filename = os.path.join(self.root_dir, self.paths[index])
         
         total_angles = 10
         angle_target, angle_cond = random.sample(range(total_angles), 2) # without replacement))
