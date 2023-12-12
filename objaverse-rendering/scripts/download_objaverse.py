@@ -54,9 +54,12 @@ if __name__ == "__main__":
     if not args.skip_completed:
         completed_uids = get_completed_uids()
         uids = [uid for uid in uids if uid not in completed_uids]
+    
+    for uid in tqdm(uids):
+        print("object_paths[uid]", object_paths[uid])
 
     uid_object_paths = [
-        f"https://huggingface.co/datasets/allenai/objaverse/resolve/main/{object_paths[uid]}"
+        f"https://huggingface.co/datasets/allenai/objaverse/blob/main/{object_paths[uid]}"
         for uid in uids
     ]
 

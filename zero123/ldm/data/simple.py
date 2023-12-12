@@ -165,6 +165,47 @@ class NfpDataset(Dataset):
         im = Image.open(filename).convert("RGB")
         return self.tform(im)
 
+
+class PartnetDataModuleFromConfig(pl.LightningDataModule):
+    def __init__(self, root_dir, batch_size, total_view, train=None, validation=None,
+                 test=None, num_workers=4, **kwargs):
+        super().__init__(self)
+        self.root_dir = root_dir
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.total_view = total_view
+
+        if train is not None:
+            dataset_config = train
+        if validation is not None:
+            dataset_config = validation
+
+        if 'image_transforms' in dataset_config:
+            image_transforms = [torchvision.transforms.Resize(dataset_config.image_transforms.size)]
+        else:
+            image_transforms = []
+        image_transforms.extend([transforms.ToTensor(),
+                                transforms.Lambda(lambda x: rearrange(x * 2. - 1., 'c h w -> h w c'))])
+        self.image_transforms = torchvision.transforms.Compose(image_transforms)
+
+
+    def train_dataloader(self):
+        dataset = PartnetData(root_dir=self.root_dir, total_view=self.total_view, validation=False, \
+                                image_transforms=self.image_transforms)
+        sampler = DistributedSampler(dataset)
+        return wds.WebLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, sampler=sampler)
+
+    def val_dataloader(self):
+        dataset = PartnetData(root_dir=self.root_dir, total_view=self.total_view, validation=True, \
+                                image_transforms=self.image_transforms)
+        sampler = DistributedSampler(dataset)
+        return wds.WebLoader(dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+    
+    def test_dataloader(self):
+        return wds.WebLoader(PartnetData(root_dir=self.root_dir, total_view=self.total_view, validation=self.validation),\
+                          batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+
+
 class ObjaverseDataModuleFromConfig(pl.LightningDataModule):
     def __init__(self, root_dir, batch_size, total_view, train=None, validation=None,
                  test=None, num_workers=4, **kwargs):
@@ -325,6 +366,160 @@ class ObjaverseData(Dataset):
     def process_im(self, im):
         im = im.convert("RGB")
         return self.tform(im)
+
+# 12073/30/30/
+class PartnetData(Dataset):
+    def __init__(self,
+        root_dir='./partnet_rendering/partnet_mobility',
+        image_transforms=[],
+        ext="png",
+        default_trans=torch.zeros(3),
+        postprocess=None,
+        return_paths=False,
+        total_view=12,
+        validation=False
+        ) -> None:
+        """Create a dataset from a folder of images.
+        If you pass in a root directory it will be searched for images
+        ending in ext (ext can be a list)
+        """
+        self.root_dir = Path(root_dir)
+        self.default_trans = default_trans
+        self.return_paths = return_paths
+        if isinstance(postprocess, DictConfig):
+            postprocess = instantiate_from_config(postprocess)
+        self.postprocess = postprocess
+        self.total_view = total_view
+
+        if not isinstance(ext, (tuple, list, ListConfig)):
+            ext = [ext]
+
+        with open(os.path.join(root_dir, 'valid_paths.json')) as f:
+            self.paths = json.load(f)
+            
+        total_objects = len(self.paths)
+        if validation:
+            # self.paths = self.paths[math.floor(total_objects / 100. * 99.):] # used last 1% as validation
+            self.paths = self.paths[-2:]
+        else:
+            # self.paths = self.paths[:math.floor(total_objects / 100. * 99.)] # used first 99% as training
+            self.paths = self.paths[:-2]
+        print('============= length of dataset %d =============' % len(self.paths))
+        self.tform = image_transforms
+
+        self.index_to_angles = {0:0, 1: 10, 2: 20, 3: 30, 4: 40, 5: 50, 6: 60, 7: 70, 8: 80, 9: 90}
+
+    def __len__(self):
+        return len(self.paths)
+        
+    def cartesian_to_spherical(self, xyz):
+        ptsnew = np.hstack((xyz, np.zeros(xyz.shape)))
+        xy = xyz[:,0]**2 + xyz[:,1]**2
+        z = np.sqrt(xy + xyz[:,2]**2)
+        theta = np.arctan2(np.sqrt(xy), xyz[:,2]) # for elevation angle defined from Z-axis down
+        #ptsnew[:,4] = np.arctan2(xyz[:,2], np.sqrt(xy)) # for elevation angle defined from XY-plane up
+        azimuth = np.arctan2(xyz[:,1], xyz[:,0])
+        return np.array([theta, azimuth, z])
+    
+    def get_angle_T(self, target_angle, cond_angle):
+        d_theta = np.deg2rad(target_angle - cond_angle)
+        d_T = torch.tensor([d_theta])
+        return d_T
+
+    def get_T(self, target_RT, cond_RT, angle_target, angle_cond):
+        R, T = target_RT[:3, :3], target_RT[:, -1]
+        T_target = -R.T @ T
+
+        R, T = cond_RT[:3, :3], cond_RT[:, -1]
+        T_cond = -R.T @ T
+
+        theta_cond, azimuth_cond, z_cond = self.cartesian_to_spherical(T_cond[None, :])
+        theta_target, azimuth_target, z_target = self.cartesian_to_spherical(T_target[None, :])
+        
+        d_theta = theta_target - theta_cond
+        d_azimuth = (azimuth_target - azimuth_cond) % (2 * math.pi)
+        d_z = z_target - z_cond
+        
+        angle_dt = self.get_angle_T(angle_target, angle_cond)
+        d_T = torch.tensor([d_theta.item(), math.sin(d_azimuth.item()), math.cos(d_azimuth.item()), d_z.item(), angle_dt.item()])
+        return d_T
+
+    def load_im(self, path, color):
+        '''
+        replace background pixel with random color in rendering
+        '''
+        try:
+            img = plt.imread(path)
+        except:
+            print(path)
+            sys.exit()
+        img[img[:, :, -1] == 0.] = color
+        img = Image.fromarray(np.uint8(img[:, :, :3] * 255.))
+        return img
+
+    def __getitem__(self, index):
+
+        data = {}
+        total_view = self.total_view
+        index_target, index_cond = random.sample(range(total_view), 2) # without replacement
+
+
+        filename = os.path.join(self.root_dir, self.paths[index])
+        
+        total_angles = 10
+        angle_target, angle_cond = random.sample(range(total_angles), 2) # without replacement))
+
+        angle_target = self.index_to_angles[angle_target]
+        angle_cond = self.index_to_angles[angle_cond]
+
+        # print(self.paths[index])
+
+        if self.return_paths:
+            data["path"] = str(filename)
+        
+        color = [1., 1., 1., 1.]
+
+        target_im = self.process_im(self.load_im(os.path.join(filename, str(angle_target), str(angle_target), '%03d.png' % index_target), color))
+        cond_im = self.process_im(self.load_im(os.path.join(filename, str(angle_cond), str(angle_cond), '%03d.png' % index_cond), color))
+        
+        target_RT = np.load(os.path.join(filename, str(angle_target), str(angle_target), '%03d.npy' % index_target))
+        cond_RT = np.load(os.path.join(filename, str(angle_cond), str(angle_cond), '%03d.npy' % index_cond))
+
+
+        # target_im = self.process_im(self.load_im(os.path.join(filename, '%03d.png' % index_target), color))
+        # cond_im = self.process_im(self.load_im(os.path.join(filename, '%03d.png' % index_cond), color))
+        # target_RT = np.load(os.path.join(filename, '%03d.npy' % index_target))
+        # cond_RT = np.load(os.path.join(filename, '%03d.npy' % index_cond))
+    
+        # try:
+            # target_im = self.process_im(self.load_im(os.path.join(filename, '%03d.png' % index_target), color))
+            # cond_im = self.process_im(self.load_im(os.path.join(filename, '%03d.png' % index_cond), color))
+            # target_RT = np.load(os.path.join(filename, '%03d.npy' % index_target))
+            # cond_RT = np.load(os.path.join(filename, '%03d.npy' % index_cond))
+        # except:
+        #     # very hacky solution, sorry about this
+        #     filename = os.path.join(self.root_dir, '692db5f2d3a04bb286cb977a7dba903e_1') # this one we know is valid
+        #     target_im = self.process_im(self.load_im(os.path.join(filename, '%03d.png' % index_target), color))
+        #     cond_im = self.process_im(self.load_im(os.path.join(filename, '%03d.png' % index_cond), color))
+        #     target_RT = np.load(os.path.join(filename, '%03d.npy' % index_target))
+        #     cond_RT = np.load(os.path.join(filename, '%03d.npy' % index_cond))
+        #     target_im = torch.zeros_like(target_im)
+        #     cond_im = torch.zeros_like(cond_im)
+
+        data["image_target"] = target_im
+        data["image_cond"] = cond_im
+        data["T"] = self.get_T(target_RT, cond_RT, angle_target, angle_cond)
+        # data["angle_T"] = self.get_angle_T(angle_target, angle_cond)
+
+        if self.postprocess is not None:
+            data = self.postprocess(data)
+
+        return data
+
+    def process_im(self, im):
+        im = im.convert("RGB")
+        return self.tform(im)
+
 
 class FolderData(Dataset):
     def __init__(self,

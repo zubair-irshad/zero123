@@ -45,7 +45,7 @@ parser.add_argument(
 )
 parser.add_argument("--scale", type=float, default=0.8)
 parser.add_argument("--num_images", type=int, default=8)
-parser.add_argument("--camera_dist", type=int, default=1.2)
+parser.add_argument("--camera_dist", type=float, default=1.2)
     
 argv = sys.argv[sys.argv.index("--") + 1 :]
 args = parser.parse_args(argv)
@@ -182,6 +182,8 @@ def load_object(object_path: str) -> None:
         bpy.ops.import_scene.gltf(filepath=object_path, merge_vertices=True)
     elif object_path.endswith(".fbx"):
         bpy.ops.import_scene.fbx(filepath=object_path)
+    elif object_path.endswith(".obj"):
+        bpy.ops.import_scene.obj(filepath=object_path)
     else:
         raise ValueError(f"Unsupported file type: {object_path}")
 
