@@ -732,10 +732,12 @@ class LatentDiffusion(DDPM):
                   cond_key=None, return_original_cond=False, bs=None, uncond=0.05):
         x = super().get_input(batch, k)
         T = batch['T'].to(memory_format=torch.contiguous_format).float()
+        angle_T = batch['angle_T'].to(memory_format=torch.contiguous_format).float()
         
         if bs is not None:
             x = x[:bs]
             T = T[:bs].to(self.device)
+            angle_T = angle_T[:bs].to(self.device)
 
         x = x.to(self.device)
         encoder_posterior = self.encode_first_stage(x)
@@ -757,8 +759,8 @@ class LatentDiffusion(DDPM):
         with torch.enable_grad():
             clip_emb = self.get_learned_conditioning(xc).detach()
             null_prompt = self.get_learned_conditioning([""]).detach()
-            pose_c_projection = self.cc_projection(torch.cat([torch.where(prompt_mask, null_prompt, clip_emb), T[:-1, None, :-1]], dim=-1))
-            final_projection = self.angle_deviation_projection(torch.cat([T[-1:, None, -1:], pose_c_projection], dim=-1))
+            pose_c_projection = self.cc_projection(torch.cat([torch.where(prompt_mask, null_prompt, clip_emb), T[:, None, :]], dim=-1))
+            final_projection = self.angle_deviation_projection(torch.cat([pose_c_projection, angle_T[:, None, :]], dim=-1))
             # cond["c_crossattn"] = [self.cc_projection(torch.cat([torch.where(prompt_mask, null_prompt, clip_emb), T[:, None, :]], dim=-1))]
             cond["c_crossattn"] = [final_projection]
         cond["c_concat"] = [input_mask * self.encode_first_stage((xc.to(self.device))).mode().detach()]

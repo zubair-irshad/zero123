@@ -441,8 +441,9 @@ class PartnetData(Dataset):
         d_z = z_target - z_cond
         
         angle_dt = self.get_angle_T(angle_target, angle_cond)
-        d_T = torch.tensor([d_theta.item(), math.sin(d_azimuth.item()), math.cos(d_azimuth.item()), d_z.item(), angle_dt.item()])
-        return d_T
+        d_T = torch.tensor([d_theta.item(), math.sin(d_azimuth.item()), math.cos(d_azimuth.item()), d_z.item()])
+        angle_dt = torch.tensor([angle_dt.item()])
+        return d_T, angle_dt
 
     def load_im(self, path, color):
         '''
@@ -508,7 +509,9 @@ class PartnetData(Dataset):
 
         data["image_target"] = target_im
         data["image_cond"] = cond_im
-        data["T"] = self.get_T(target_RT, cond_RT, angle_target, angle_cond)
+        T, angle_T = self.get_T(target_RT, cond_RT, angle_target, angle_cond)
+        data["T"] = T
+        data["angle_T"] = angle_T
         # data["angle_T"] = self.get_angle_T(angle_target, angle_cond)
 
         if self.postprocess is not None:

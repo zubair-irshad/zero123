@@ -1,6 +1,6 @@
 import random
 import numpy as np
-data_folder = '/home/zubairirshad/zero123/objaverse-rendering/partnet_mobility/12073/20/20/'
+data_folder = '/home/zubairirshad/Downloads/partnet_mobility_z123/12073/20/20/'
 
 # data_folder = '/home/zubairirshad/SAPIEN/renders_balanced/laptop/9992/train/0_degree/'
 import os
@@ -54,7 +54,7 @@ def get_T(target_RT, cond_RT):
     d_azimuth = (azimuth_target - azimuth_cond) % (2 * math.pi)
     d_z = z_target - z_cond
     
-    d_T = torch.tensor([d_theta.item(), math.sin(d_azimuth.item()), math.cos(d_azimuth.item()), d_z.item()])
+    d_T = torch.tensor([d_theta.item(), math.sin(d_azimuth.item()), math.cos(d_azimuth.item()), d_z.item(), 1])
     return d_T
 
 total_view = 12
@@ -67,5 +67,8 @@ for i in range(10):
 
     # T = get_T_sapien(target_RT, cond_RT)
     T = get_T(target_RT, cond_RT)
+    
+    a = T[:, None, :]
+    print("T", a.shape)
 
     print("T", T)
