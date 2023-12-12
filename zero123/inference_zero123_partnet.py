@@ -269,8 +269,8 @@ def calc_cam_cone_pts_3d(polar_deg, azimuth_deg, radius_m, fov_deg):
 
 def inference(
         device_idx=_GPU_INDEX,
-        ckpt='105000.ckpt',
-        config='configs/sd-objaverse-finetune-c_concat-256.yaml',
+        ckpt='/home/ubuntu/zubair/zero123/zero123/logs/2023-12-12T05-44-46_sd-partnet-finetune-c_concat-256/checkpoints/last.ckpt',
+        config='configs/sd-partnet-finetune-c_concat-256.yaml',
         input_image = None,
         output_dir = None):
     
@@ -331,15 +331,13 @@ def inference(
     #     output_ims[i].save(output_dir + '/output_' + str(i) + '.png')
     # print("output_ims:", output_ims[0].shape)
 
-
-
 if __name__ == '__main__':
 
-
-    input_image_path = '/home/ubuntu/zubair/zero123/3drec/data/nerf_wild/lysol/train/r_0.png'
+    input_image_path = '/data/zubair/partnet_mobility_z123/10040/40/40/008.png'
+    # input_image_path = '/home/ubuntu/zubair/zero123/3drec/data/nerf_wild/lysol/train/r_0.png'
     input_image = Image.open(input_image_path)
 
-    output_dir = '/home/ubuntu/zubair/zero123/output/lysol'
+    output_dir = '/home/ubuntu/zubair/zero123/articulation_output/10040_40'
     os.makedirs(output_dir, exist_ok=True)
 
     #save input image in output_dir
