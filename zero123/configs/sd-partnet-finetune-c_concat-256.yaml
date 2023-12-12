@@ -73,7 +73,7 @@ data:
   target: ldm.data.simple.PartnetDataModuleFromConfig
   params:
     root_dir: '/data/zubair/partnet_mobility_z123'
-    batch_size: 192
+    batch_size: 20
     num_workers: 16
     total_view: 12
     train:
