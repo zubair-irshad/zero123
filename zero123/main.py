@@ -724,10 +724,10 @@ if __name__ == "__main__":
             "wandb": {
                 "target": "pytorch_lightning.loggers.WandbLogger",
                 "params": {
-                    "name": nowname,
+                    "name": "zero123-zubair",
                     "save_dir": logdir,
                     "offline": opt.debug,
-                    "id": nowname,
+                    "id": "zero123-zubair",
                 }
             },
             "testtube": {
@@ -738,7 +738,8 @@ if __name__ == "__main__":
                 }
             },
         }
-        default_logger_cfg = default_logger_cfgs["testtube"]
+        # default_logger_cfg = default_logger_cfgs["testtube"]
+        default_logger_cfg = default_logger_cfgs["wandb"]
         if "logger" in lightning_config:
             logger_cfg = lightning_config.logger
         else:
