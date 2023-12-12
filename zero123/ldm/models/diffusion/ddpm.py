@@ -530,7 +530,7 @@ class LatentDiffusion(DDPM):
         self.cc_projection.requires_grad_(True)
 
         # Define the linear layer for the new conditioning channel
-        self.angle_deviation_projection = nn.Linear(767, 768)
+        self.angle_deviation_projection = nn.Linear(769, 768)
         nn.init.eye_(list(self.angle_deviation_projection.parameters())[0][:768, :768])
         nn.init.zeros_(list(self.angle_deviation_projection.parameters())[1])
         self.angle_deviation_projection.requires_grad_(True)
