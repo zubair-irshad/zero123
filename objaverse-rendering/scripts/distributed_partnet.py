@@ -31,9 +31,10 @@ class Args:
     workers_per_gpu: int = 1
     """number of workers per gpu"""
 
-# ids = ['10383', '10306', '10626', '9992', '12073', '11242', '11586', '9968', '11477', '11429', '11156', '10885', '11395', '11075']
+ids = ['10383', '10306', '10626', '9992', '12073', '11242', '11586', '9968', '11477', '11429', '11156', '10885', '11395', '11075']
 
-ids = new_ids = ['11581', '11586', '11691', '11778', '11854', '11876', '11945', '10040', '10098', '10101']
+# ids = ['11581', '11586', '11691', '11778', '11876', '11945', '10040', '10098', '10101']
+
 data_path = '/home/zubairirshad/SAPIEN/partnet-mobility-dataset'
 def worker(
     queue: multiprocessing.JoinableQueue,
@@ -52,7 +53,7 @@ def worker(
 
         # view_path = os.path.join('.objaverse/hf-objaverse-v1/views_whole_sphere', item.split('/')[-1][:-4])
         path_parts = item.split('/')
-        view_path = os.path.join('/home/zubairirshad/zero123/objaverse-rendering/partnet_mobility', path_parts[-4], path_parts[-2])
+        view_path = os.path.join('/home/zubairirshad/zero123/objaverse-rendering/partnet_mobility_fixed_camera', path_parts[-4], path_parts[-2])
         if os.path.exists(view_path):
             queue.task_done()
             print('========', item, 'rendered', '========')
@@ -66,8 +67,8 @@ def worker(
             # f"export DISPLAY=:0.{gpu} &&"
             # f" GOMP_CPU_AFFINITY='0-47' OMP_NUM_THREADS=48 OMP_SCHEDULE=STATIC OMP_PROC_BIND=CLOSE "
             f" CUDA_VISIBLE_DEVICES={gpu} "
-            f" blender -b -P scripts/blender_script.py --"
-            f" --object_path {item} --camera_dist {camera_dist} --engine CYCLES --scale 0.8 --num_images 12 --output_dir {view_path}"
+            f" blender -b -P scripts/blender_script_fixed.py --"
+            f" --object_path {item} --camera_dist {camera_dist} --engine CYCLES --scale 0.8 --num_images 25 --output_dir {view_path}"
         )
         print(command)
         subprocess.run(command, shell=True)

@@ -1,8 +1,9 @@
 import random
 import numpy as np
-data_folder = '/home/zubairirshad/Downloads/partnet_mobility_z123/12073/20/20/'
+# data_folder = '/home/zubairirshad/zero123/objaverse-rendering/partnet_mobility_fixed_camera/11581/20/20'
 
-# data_folder = '/home/zubairirshad/SAPIEN/renders_balanced/laptop/9992/train/0_degree/'
+data_folder = '/home/zubairirshad/zero123/objaverse-rendering/partnet_mobility_fixed_camera/11581'
+
 import os
 import torch
 import math
@@ -54,21 +55,35 @@ def get_T(target_RT, cond_RT):
     d_azimuth = (azimuth_target - azimuth_cond) % (2 * math.pi)
     d_z = z_target - z_cond
     
-    d_T = torch.tensor([d_theta.item(), math.sin(d_azimuth.item()), math.cos(d_azimuth.item()), d_z.item(), 1])
+    d_T = torch.tensor([d_theta.item(), math.sin(d_azimuth.item()), math.cos(d_azimuth.item()), d_z.item()])
     return d_T
 
-total_view = 12
+total_view = 25
+
+index_to_angles = {0:0, 1: 10, 2: 20, 3: 30, 4: 40, 5: 50, 6: 60, 7: 70, 8: 80, 9: 90}
+
 
 for i in range(10):
-    index_target, index_cond = random.sample(range(total_view), 2) # without replacement
+    # index_target, index_cond = random.sample(range(total_view), 2) # without replacement
+    # target_RT = np.load(os.path.join(data_folder, '%03d.npy' % index_target))
+    # cond_RT = np.load(os.path.join(data_folder, '%03d.npy' % index_cond))
+    
+    total_angles = 10
+    angle_target, angle_cond = random.sample(range(total_angles), 2) # without replacement))
 
-    target_RT = np.load(os.path.join(data_folder, '%03d.npy' % index_target))
-    cond_RT = np.load(os.path.join(data_folder, '%03d.npy' % index_cond))
+    angle_target = index_to_angles[angle_target]
+    angle_cond = index_to_angles[angle_cond]
+    index_img = random.sample(range(total_view), 1) # without replacement
+
+    print("index_img", index_img)
+    target_RT = np.load(os.path.join(data_folder, str(angle_target), str(angle_target), '%03d.npy' % index_img[0]))
+    cond_RT = np.load(os.path.join(data_folder, str(angle_cond), str(angle_cond), '%03d.npy' % index_img[0]))
+
 
     # T = get_T_sapien(target_RT, cond_RT)
     T = get_T(target_RT, cond_RT)
     
-    a = T[:, None, :]
-    print("T", a.shape)
+    # a = T[:, None, :]
+    print("T", T.shape)
 
     print("T", T)

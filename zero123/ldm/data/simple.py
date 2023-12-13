@@ -462,8 +462,10 @@ class PartnetData(Dataset):
 
         data = {}
         total_view = self.total_view
-        index_target, index_cond = random.sample(range(total_view), 2) # without replacement
-    
+
+        #index_target, index_cond = random.sample(range(total_view), 2) # without replacement
+        index_img = random.sample(range(total_view), 1) # without replacement
+        
         all_folders_len = len(self.paths)
         folder_index = random.randint(0, all_folders_len-1)
         filename = os.path.join(self.root_dir, self.paths[folder_index])
@@ -482,11 +484,17 @@ class PartnetData(Dataset):
         
         color = [1., 1., 1., 1.]
 
-        target_im = self.process_im(self.load_im(os.path.join(filename, str(angle_target), str(angle_target), '%03d.png' % index_target), color))
-        cond_im = self.process_im(self.load_im(os.path.join(filename, str(angle_cond), str(angle_cond), '%03d.png' % index_cond), color))
+        # target_im = self.process_im(self.load_im(os.path.join(filename, str(angle_target), str(angle_target), '%03d.png' % index_target), color))
+        # cond_im = self.process_im(self.load_im(os.path.join(filename, str(angle_cond), str(angle_cond), '%03d.png' % index_cond), color))
         
-        target_RT = np.load(os.path.join(filename, str(angle_target), str(angle_target), '%03d.npy' % index_target))
-        cond_RT = np.load(os.path.join(filename, str(angle_cond), str(angle_cond), '%03d.npy' % index_cond))
+        # target_RT = np.load(os.path.join(filename, str(angle_target), str(angle_target), '%03d.npy' % index_target))
+        # cond_RT = np.load(os.path.join(filename, str(angle_cond), str(angle_cond), '%03d.npy' % index_cond))
+
+        target_im = self.process_im(self.load_im(os.path.join(filename, str(angle_target), str(angle_target), '%03d.png' % index_img[0]), color))
+        cond_im = self.process_im(self.load_im(os.path.join(filename, str(angle_cond), str(angle_cond), '%03d.png' % index_img[0]), color))
+        
+        target_RT = np.load(os.path.join(filename, str(angle_target), str(angle_target), '%03d.npy' % index_img[0]))
+        cond_RT = np.load(os.path.join(filename, str(angle_cond), str(angle_cond), '%03d.npy' % index_img[0]))
 
 
         # target_im = self.process_im(self.load_im(os.path.join(filename, '%03d.png' % index_target), color))
