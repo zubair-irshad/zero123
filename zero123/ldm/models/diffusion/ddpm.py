@@ -1430,7 +1430,8 @@ class LatentDiffusion(DDPM):
             print('========== optimizing for angle_deviation_projection weight ==========')
 
         opt = torch.optim.AdamW([{"params": self.model.parameters(), "lr": lr},
-                                {"params": self.cc_projection.parameters(), "lr": 10. * lr}], lr=lr)
+                                {"params": self.cc_projection.parameters(), "lr": 10. * lr},
+                                {"params": self.angle_deviation_projection.parameters(), "lr": 10. * lr}], lr=lr)
         if self.use_scheduler:
             assert 'target' in self.scheduler_config
             scheduler = instantiate_from_config(self.scheduler_config)
