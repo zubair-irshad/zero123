@@ -523,17 +523,23 @@ class LatentDiffusion(DDPM):
         self.cond_stage_forward = cond_stage_forward
 
         # construct linear projection layer for concatenating image CLIP embedding and RT
-        # self.cc_projection = nn.Linear(772, 768)
-        # # self.cc_projection = nn.Linear(773, 768)
-        # nn.init.eye_(list(self.cc_projection.parameters())[0][:768, :768])
-        # nn.init.zeros_(list(self.cc_projection.parameters())[1])
-        # self.cc_projection.requires_grad_(True)
+        self.cc_projection = nn.Linear(772, 768)
+        # self.cc_projection = nn.Linear(773, 768)
+        nn.init.eye_(list(self.cc_projection.parameters())[0][:768, :768])
+        nn.init.zeros_(list(self.cc_projection.parameters())[1])
+        self.cc_projection.requires_grad_(True)
 
         # Define the linear layer for the new conditioning channel
         self.angle_deviation_projection = nn.Linear(769, 768)
         nn.init.eye_(list(self.angle_deviation_projection.parameters())[0][:768, :768])
         nn.init.zeros_(list(self.angle_deviation_projection.parameters())[1])
         self.angle_deviation_projection.requires_grad_(True)
+
+        # # Define the linear layer for the new conditioning channel
+        self.final_projection_layer = nn.Linear(1536, 768)
+        nn.init.eye_(list(self.final_projection_layer.parameters())[0][:768, :768])
+        nn.init.zeros_(list(self.final_projection_layer.parameters())[1])
+        self.final_projection_layer.requires_grad_(True)
 
         
         self.clip_denoised = False
@@ -731,12 +737,12 @@ class LatentDiffusion(DDPM):
     def get_input(self, batch, k, return_first_stage_outputs=False, force_c_encode=False,
                   cond_key=None, return_original_cond=False, bs=None, uncond=0.05):
         x = super().get_input(batch, k)
-        # T = batch['T'].to(memory_format=torch.contiguous_format).float()
+        T = batch['T'].to(memory_format=torch.contiguous_format).float()
         angle_T = batch['angle_T'].to(memory_format=torch.contiguous_format).float()
         
         if bs is not None:
             x = x[:bs]
-            # T = T[:bs].to(self.device)
+            T = T[:bs].to(self.device)
             angle_T = angle_T[:bs].to(self.device)
 
         x = x.to(self.device)
@@ -759,10 +765,11 @@ class LatentDiffusion(DDPM):
         with torch.enable_grad():
             clip_emb = self.get_learned_conditioning(xc).detach()
             null_prompt = self.get_learned_conditioning([""]).detach()
-            # pose_c_projection = self.cc_projection(torch.cat([torch.where(prompt_mask, null_prompt, clip_emb), T[:, None, :]], dim=-1))
-            #final_projection = self.angle_deviation_projection(torch.cat([pose_c_projection, angle_T[:, None, :]], dim=-1))
+            pose_c_projection = self.cc_projection(torch.cat([torch.where(prompt_mask, null_prompt, clip_emb), T[:, None, :]], dim=-1))
+            angle_c_projection = self.angle_deviation_projection(torch.cat([torch.where(prompt_mask, null_prompt, clip_emb), angle_T[:, None, :]], dim=-1))
+            final_projection = self.final_projection_layer(torch.cat([pose_c_projection, angle_c_projection], dim=-1))
             
-            final_projection = self.angle_deviation_projection(torch.cat([torch.where(prompt_mask, null_prompt, clip_emb), angle_T[:, None, :]], dim=-1))
+            # final_projection = self.angle_deviation_projection(torch.cat([torch.where(prompt_mask, null_prompt, clip_emb), angle_T[:, None, :]], dim=-1))
             
             # cond["c_crossattn"] = [self.cc_projection(torch.cat([torch.where(prompt_mask, null_prompt, clip_emb), T[:, None, :]], dim=-1))]
             cond["c_crossattn"] = [final_projection]
@@ -1424,20 +1431,25 @@ class LatentDiffusion(DDPM):
             print('Diffusion model optimizing logvar')
             params.append(self.logvar)
 
-        # if self.cc_projection is not None:
-        #     params = params + list(self.cc_projection.parameters())
-        #     print('========== optimizing for cc projection weight ==========')
+        if self.cc_projection is not None:
+            params = params + list(self.cc_projection.parameters())
+            print('========== optimizing for cc projection weight ==========')
 
         if self.angle_deviation_projection is not None:
             params = params + list(self.angle_deviation_projection.parameters())
             print('========== optimizing for angle_deviation_projection weight ==========')
 
-        # opt = torch.optim.AdamW([{"params": self.model.parameters(), "lr": lr},
-        #                         {"params": self.cc_projection.parameters(), "lr": 10. * lr},
-        #                         {"params": self.angle_deviation_projection.parameters(), "lr": 10. * lr}], lr=lr)
-        
+        if self.final_projection_layer_projection is not None:
+            params = params + list(self.final_projection_layer_projection.parameters())
+            print('========== optimizing for final projection layer weight ==========')
+
         opt = torch.optim.AdamW([{"params": self.model.parameters(), "lr": lr},
-                                {"params": self.angle_deviation_projection.parameters(), "lr": 10. * lr}], lr=lr)
+                                {"params": self.cc_projection.parameters(), "lr": 10. * lr},
+                                {"params": self.angle_deviation_projection.parameters(), "lr": 10. * lr},
+                                {"params": self.final_projection_layer.parameters(), "lr": 10. * lr}], lr=lr)
+        
+        # opt = torch.optim.AdamW([{"params": self.model.parameters(), "lr": lr},
+        #                         {"params": self.angle_deviation_projection.parameters(), "lr": 10. * lr}], lr=lr)
         
         if self.use_scheduler:
             assert 'target' in self.scheduler_config
