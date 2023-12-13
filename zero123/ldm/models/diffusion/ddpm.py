@@ -1440,7 +1440,7 @@ class LatentDiffusion(DDPM):
             print('========== optimizing for angle_deviation_projection weight ==========')
 
         if self.final_projection_layer_projection is not None:
-            params = params + list(self.final_projection_layer_projection.parameters())
+            params = params + list(self.final_projection_layer.parameters())
             print('========== optimizing for final projection layer weight ==========')
 
         opt = torch.optim.AdamW([{"params": self.model.parameters(), "lr": lr},
