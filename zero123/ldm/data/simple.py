@@ -376,7 +376,7 @@ class PartnetData(Dataset):
         default_trans=torch.zeros(3),
         postprocess=None,
         return_paths=False,
-        total_view=12,
+        total_view=25,
         validation=False
         ) -> None:
         """Create a dataset from a folder of images.
