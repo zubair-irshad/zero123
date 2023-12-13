@@ -1439,7 +1439,7 @@ class LatentDiffusion(DDPM):
             params = params + list(self.angle_deviation_projection.parameters())
             print('========== optimizing for angle_deviation_projection weight ==========')
 
-        if self.final_projection_layer_projection is not None:
+        if self.final_projection_layer is not None:
             params = params + list(self.final_projection_layer.parameters())
             print('========== optimizing for final projection layer weight ==========')
 
